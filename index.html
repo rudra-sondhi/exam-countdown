@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Countdown Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Exam Countdown Tracker</h1>
+        
+        <div class="datetime-container">
+            <div class="date-display" id="current-date"></div>
+            <div class="time-display" id="current-time"></div>
+        </div>
+        
+        <div class="exams-container">
+            <div class="add-exam-form">
+                <h2>Add New Exam</h2>
+                <form id="exam-form">
+                    <div class="form-group">
+                        <label for="exam-name">Exam Name:</label>
+                        <input type="text" id="exam-name" required placeholder="e.g., Calculus Final">
+                    </div>
+                    <div class="form-group">
+                        <label for="exam-date">Date & Time:</label>
+                        <input type="datetime-local" id="exam-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="exam-location">Location:</label>
+                        <input type="text" id="exam-location" placeholder="e.g., Room 101">
+                    </div>
+                    <button type="submit" id="add-exam-btn">Add Exam</button>
+                </form>
+            </div>
+            
+            <div class="exams-list">
+                <h2>Your Upcoming Exams</h2>
+                <div id="exams-countdown-container">
+                    <!-- Exams will be added here dynamically -->
+                    <div class="empty-exams-message">No exams added yet. Add your first exam above!</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="calendar-container">
+            <div class="calendar-header">
+                <span id="calendar-month-year"></span>
+                <div class="calendar-nav">
+                    <button id="prev-month">❮</button>
+                    <button id="next-month">❯</button>
+                </div>
+            </div>
+            <div class="weekdays">
+                <div>Sun</div>
+                <div>Mon</div>
+                <div>Tue</div>
+                <div>Wed</div>
+                <div>Thu</div>
+                <div>Fri</div>
+                <div>Sat</div>
+            </div>
+            <div class="calendar-days" id="calendar-days"></div>
+        </div>
+        
+        <div class="tasks-container">
+            <h2>Exam Preparation Tasks</h2>
+            
+            <div class="add-task">
+                <input type="text" id="new-task-input" placeholder="Add a study task...">
+                <button id="add-task-btn">Add</button>
+            </div>
+            
+            <div class="task-lists">
+                <div class="task-list assigned">
+                    <h3><span class="indicator"></span>To Study</h3>
+                    <ul id="assigned-tasks"></ul>
+                </div>
+                
+                <div class="task-list completed">
+                    <h3><span class="indicator"></span>Completed</h3>
+                    <ul id="completed-tasks"></ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <span class="flash">📚</span> 
+            <span>Exam Countdown Tracker</span>
+            <span class="flash">📝</span>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
