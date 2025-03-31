@@ -65,6 +65,51 @@
             <div class="calendar-days" id="calendar-days"></div>
         </div>
         
+        <!-- New Grade Calculator Section -->
+        <div class="grade-calculator-container" id="grade-calculator-container">
+            <h2>Grade Calculator</h2>
+            
+            <div class="calculator-form">
+                <div class="form-group">
+                    <label for="course-select">Select Course:</label>
+                    <select id="course-select">
+                        <option value="">-- Select an exam --</option>
+                        <!-- Options will be dynamically added based on exams -->
+                    </select>
+                </div>
+                
+                <div class="grade-components">
+                    <table id="grade-components-table">
+                        <thead>
+                            <tr>
+                                <th>Component</th>
+                                <th>Weight (%)</th>
+                                <th>Grade (%)</th>
+                                <th>Marks N/A</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="grade-components-body">
+                            <!-- Components will be added here -->
+                        </tbody>
+                    </table>
+                    
+                    <button id="add-component-btn">Add Component</button>
+                </div>
+                
+                <div class="form-group">
+                    <label for="desired-grade">Desired Grade (%):</label>
+                    <input type="number" id="desired-grade" min="0" max="100" value="80">
+                </div>
+                
+                <button id="calculate-btn">Calculate Required Marks</button>
+            </div>
+            
+            <div class="calculation-result" id="calculation-result">
+                <!-- Results will be displayed here -->
+            </div>
+        </div>
+        
         <div class="tasks-container">
             <h2>Exam Preparation Tasks</h2>
             

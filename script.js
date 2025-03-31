@@ -3,6 +3,7 @@ let lastDate = null;
 let currentViewMonth = new Date().getMonth();
 let currentViewYear = new Date().getFullYear();
 let exams = JSON.parse(localStorage.getItem('exams-data')) || [];
+let gradeCalculators = JSON.parse(localStorage.getItem('grade-calculators')) || {};
 
 // DOM elements
 document.addEventListener('DOMContentLoaded', function() {
@@ -11,6 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
     renderExams();
     generateCalendar(new Date());
     renderTasks();
+    initGradeCalculator();
     
     // Set up event listeners
     document.getElementById('exam-form').addEventListener('submit', addExam);
@@ -27,6 +29,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Update date, time and countdowns every second
     setInterval(updateDateTime, 1000);
+    
+    // Check if exams exist and show/hide grade calculator
+    updateGradeCalculatorVisibility();
 });
 
 // Update date and time
@@ -92,21 +97,44 @@ function addExam(e) {
     // Render exams and update calendar
     renderExams();
     generateCalendar(new Date(currentViewYear, currentViewMonth));
+    
+    // Update grade calculator visibility
+    updateGradeCalculatorVisibility();
+    
+    // Update course select in grade calculator
+    populateCourseSelect();
 }
 
 // Delete exam
 function deleteExam(examId) {
     if (confirm('Are you sure you want to remove this exam?')) {
         exams = exams.filter(exam => exam.id !== examId);
+        
+        // Also remove this exam from the grade calculators
+        if (gradeCalculators[examId]) {
+            delete gradeCalculators[examId];
+            localStorage.setItem('grade-calculators', JSON.stringify(gradeCalculators));
+        }
+        
         saveExams();
         renderExams();
         generateCalendar(new Date(currentViewYear, currentViewMonth));
+        
+        // Update grade calculator visibility
+        updateGradeCalculatorVisibility();
+        
+        // Update course select in grade calculator
+        populateCourseSelect();
     }
 }
 
 // Save exams to localStorage
 function saveExams() {
     localStorage.setItem('exams-data', JSON.stringify(exams));
+    
+    // Dispatch custom event for exam updates
+    const event = new CustomEvent('examsUpdated');
+    document.dispatchEvent(event);
 }
 
 // Render exams list and countdowns
@@ -163,6 +191,18 @@ function renderExams() {
         `;
         
         examsContainer.appendChild(examElement);
+        
+        // Add grade info if available
+        if (gradeCalculators[exam.id] && gradeCalculators[exam.id].currentGrade !== undefined) {
+            const courseData = gradeCalculators[exam.id];
+            const pendingComponents = courseData.components.filter(component => component.marksNA);
+            const requiredFinalMark = pendingComponents.length > 0 && 
+                                      courseData.requiredMarks ? 
+                                      Object.values(courseData.requiredMarks)[pendingComponents.length - 1].toFixed(2) : 
+                                      'N/A';
+            
+            updateExamWithGradeInfo(exam.id, courseData.currentGrade.toFixed(2), requiredFinalMark);
+        }
     });
     
     // Initial update for countdowns
@@ -423,6 +463,380 @@ function addTask() {
         saveTasks();
         renderTasks();
     }
+}
+
+// Grade Calculator Functions
+function initGradeCalculator() {
+    // Get references to DOM elements
+    const courseSelect = document.getElementById('course-select');
+    const addComponentBtn = document.getElementById('add-component-btn');
+    const calculateBtn = document.getElementById('calculate-btn');
+    const desiredGradeInput = document.getElementById('desired-grade');
+    
+    // Add event listeners
+    courseSelect.addEventListener('change', loadGradeComponents);
+    addComponentBtn.addEventListener('click', addGradeComponent);
+    calculateBtn.addEventListener('click', calculateRequiredMarks);
+    desiredGradeInput.addEventListener('change', saveGradeComponents);
+    
+    // Populate course select with available exams
+    populateCourseSelect();
+    
+    // Listen for exam updates
+    document.addEventListener('examsUpdated', function() {
+        populateCourseSelect();
+    });
+}
+
+// Show/hide grade calculator based on whether exams exist
+function updateGradeCalculatorVisibility() {
+    const gradeCalculatorContainer = document.getElementById('grade-calculator-container');
+    
+    if (exams.length > 0) {
+        gradeCalculatorContainer.classList.remove('hidden');
+    } else {
+        gradeCalculatorContainer.classList.add('hidden');
+    }
+}
+
+// Populate course select dropdown with available exams
+function populateCourseSelect() {
+    const courseSelect = document.getElementById('course-select');
+    courseSelect.innerHTML = '<option value="">-- Select an exam --</option>';
+    
+    exams.forEach(exam => {
+        const option = document.createElement('option');
+        option.value = exam.id;
+        option.textContent = exam.name;
+        courseSelect.appendChild(option);
+    });
+}
+
+// Add a new grade component row
+function addGradeComponent() {
+    const gradeComponentsTable = document.getElementById('grade-components-body');
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td><input type="text" class="component-name" placeholder="e.g., Midterm"></td>
+        <td><input type="number" class="component-weight" min="0" max="100" placeholder="e.g., 25"></td>
+        <td><input type="number" class="component-grade" min="0" max="100" placeholder="e.g., 85"></td>
+        <td><input type="checkbox" class="marks-na"></td>
+        <td>
+            <div class="component-actions">
+                <button class="delete-component-btn">×</button>
+            </div>
+        </td>
+    `;
+    
+    // Add event listener to checkbox to disable grade input when checked
+    const marksNaCheckbox = row.querySelector('.marks-na');
+    const gradeInput = row.querySelector('.component-grade');
+    
+    marksNaCheckbox.addEventListener('change', function() {
+        gradeInput.disabled = this.checked;
+        if (this.checked) {
+            gradeInput.value = '';
+        }
+        saveGradeComponents();
+    });
+    
+    // Add event listener to delete button
+    row.querySelector('.delete-component-btn').addEventListener('click', function() {
+        row.remove();
+        saveGradeComponents();
+    });
+    
+    // Add event listeners to inputs to save on change
+    const inputs = row.querySelectorAll('input');
+    inputs.forEach(input => {
+        input.addEventListener('change', saveGradeComponents);
+    });
+    
+    gradeComponentsTable.appendChild(row);
+    saveGradeComponents();
+}
+
+// Load grade components for selected course
+function loadGradeComponents() {
+    const courseSelect = document.getElementById('course-select');
+    const gradeComponentsTable = document.getElementById('grade-components-body');
+    const desiredGradeInput = document.getElementById('desired-grade');
+    const calculationResult = document.getElementById('calculation-result');
+    
+    const courseId = courseSelect.value;
+    gradeComponentsTable.innerHTML = '';
+    calculationResult.classList.remove('show');
+    
+    if (!courseId) return;
+    
+    // Load saved components for this course
+    const courseData = gradeCalculators[courseId] || { components: [], desiredGrade: 80 };
+    
+    // Set desired grade
+    desiredGradeInput.value = courseData.desiredGrade || 80;
+    
+    // Add component rows
+    if (courseData.components && courseData.components.length > 0) {
+        courseData.components.forEach(component => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input type="text" class="component-name" value="${component.name || ''}" placeholder="e.g., Midterm"></td>
+                <td><input type="number" class="component-weight" min="0" max="100" value="${component.weight || ''}" placeholder="e.g., 25"></td>
+                <td><input type="number" class="component-grade" min="0" max="100" value="${component.marksNA ? '' : (component.grade || '')}" placeholder="e.g., 85" ${component.marksNA ? 'disabled' : ''}></td>
+                <td><input type="checkbox" class="marks-na" ${component.marksNA ? 'checked' : ''}></td>
+                <td>
+                    <div class="component-actions">
+                        <button class="delete-component-btn">×</button>
+                    </div>
+                </td>
+            `;
+            
+            // Add event listener to checkbox to disable grade input when checked
+            const marksNaCheckbox = row.querySelector('.marks-na');
+            const gradeInput = row.querySelector('.component-grade');
+            
+            marksNaCheckbox.addEventListener('change', function() {
+                gradeInput.disabled = this.checked;
+                if (this.checked) {
+                    gradeInput.value = '';
+                }
+                saveGradeComponents();
+            });
+            
+            // Add event listener to delete button
+            row.querySelector('.delete-component-btn').addEventListener('click', function() {
+                row.remove();
+                saveGradeComponents();
+            });
+            
+            // Add event listeners to inputs to save on change
+            const inputs = row.querySelectorAll('input');
+            inputs.forEach(input => {
+                input.addEventListener('change', saveGradeComponents);
+            });
+            
+            gradeComponentsTable.appendChild(row);
+        });
+    } else {
+        // Add at least one empty row if none exist
+        addGradeComponent();
+    }
+    
+    // Update calculation if there's already data
+    if (courseData.currentGrade !== undefined) {
+        calculateRequiredMarks();
+    }
+}
+
+// Save grade components for current course
+function saveGradeComponents() {
+    const courseSelect = document.getElementById('course-select');
+    const gradeComponentsTable = document.getElementById('grade-components-body');
+    const desiredGradeInput = document.getElementById('desired-grade');
+    
+    const courseId = courseSelect.value;
+    if (!courseId) return;
+    
+    const components = [];
+    const rows = gradeComponentsTable.querySelectorAll('tr');
+    
+    rows.forEach(row => {
+        const nameInput = row.querySelector('.component-name');
+        const weightInput = row.querySelector('.component-weight');
+        const gradeInput = row.querySelector('.component-grade');
+        const marksNaCheckbox = row.querySelector('.marks-na');
+        
+        if (nameInput && weightInput) {
+            components.push({
+                name: nameInput.value.trim(),
+                weight: parseFloat(weightInput.value) || 0,
+                grade: marksNaCheckbox.checked ? null : (parseFloat(gradeInput.value) || 0),
+                marksNA: marksNaCheckbox.checked
+            });
+        }
+    });
+    
+    // Get desired grade
+    const desiredGrade = parseFloat(desiredGradeInput.value) || 80;
+    
+    // Save to grade calculators object
+    gradeCalculators[courseId] = {
+        components: components,
+        desiredGrade: desiredGrade
+    };
+    
+    // Save to localStorage
+    localStorage.setItem('grade-calculators', JSON.stringify(gradeCalculators));
+}
+
+// Calculate required marks
+function calculateRequiredMarks() {
+    const courseSelect = document.getElementById('course-select');
+    const calculationResult = document.getElementById('calculation-result');
+    
+    const courseId = courseSelect.value;
+    if (!courseId) {
+        alert('Please select a course');
+        return;
+    }
+    
+    // Save current components first
+    saveGradeComponents();
+    
+    // Get course data
+    const courseData = gradeCalculators[courseId];
+    if (!courseData || !courseData.components || courseData.components.length === 0) {
+        alert('Please add at least one component');
+        return;
+    }
+    
+    // Check if weights sum to 100%
+    const totalWeight = courseData.components.reduce((sum, component) => sum + (component.weight || 0), 0);
+    if (Math.abs(totalWeight - 100) > 0.01) {
+        alert('Component weights must sum to 100%. Current total: ' + totalWeight.toFixed(2) + '%');
+        return;
+    }
+    
+    // Calculate current grade based on completed components
+    let completedWeight = 0;
+    let weightedSum = 0;
+    
+    courseData.components.forEach(component => {
+        if (!component.marksNA && component.grade !== null) {
+            completedWeight += component.weight;
+            weightedSum += component.grade * (component.weight / 100);
+        }
+    });
+    
+    const currentGrade = completedWeight > 0 ? (weightedSum * 100 / completedWeight) : 0;
+    
+    // Find components with marks N/A
+    const pendingComponents = courseData.components.filter(component => component.marksNA);
+    
+    // Calculate required marks for pending components
+    let requiredMarks = {};
+    
+    if (pendingComponents.length > 0) {
+        // Get desired grade
+        const desiredGrade = courseData.desiredGrade || 80;
+        
+        // Add 2% buffer to desired grade
+        const targetGrade = desiredGrade + 2;
+        
+        // Calculate what's needed for remaining components
+        const remainingWeight = 100 - completedWeight;
+        const pointsNeeded = (targetGrade - weightedSum * 100 / 100);
+        
+        if (remainingWeight > 0) {
+            // Sort pending components by their order in the original list
+            pendingComponents.sort((a, b) => {
+                return courseData.components.indexOf(a) - courseData.components.indexOf(b);
+            });
+            
+            // Start with first pending component
+            const firstPending = pendingComponents[0];
+            let firstRequiredMark = pointsNeeded * 100 / firstPending.weight;
+            
+            // Cap at 100%
+            firstRequiredMark = Math.min(firstRequiredMark, 100);
+            
+            requiredMarks[firstPending.name] = firstRequiredMark;
+            
+            // If there are multiple pending components, distribute the remaining needs
+            if (pendingComponents.length > 1) {
+                // Recalculate with first component's contribution
+                const newWeightedSum = weightedSum + (firstRequiredMark * firstPending.weight / 100);
+                const newCompletedWeight = completedWeight + firstPending.weight;
+                
+                // For remaining components, set to maintain the target
+                for (let i = 1; i < pendingComponents.length; i++) {
+                    const component = pendingComponents[i];
+                    
+                    // Calculate required to maintain target
+                    const remainingTarget = (targetGrade * 100 - newWeightedSum * 100) / (100 - newCompletedWeight);
+                    
+                    requiredMarks[component.name] = Math.min(remainingTarget, 100);
+                }
+            }
+        }
+    }
+    
+    // Display results
+    calculationResult.innerHTML = '';
+    calculationResult.classList.add('show');
+    
+    // Show current grade
+    const currentGradeDiv = document.createElement('div');
+    currentGradeDiv.className = 'result-item';
+    currentGradeDiv.innerHTML = `
+        <span class="result-label">Current Grade:</span>
+        <span class="result-value current-grade">${currentGrade.toFixed(2)}%</span>
+    `;
+    calculationResult.appendChild(currentGradeDiv);
+    
+    // Show required marks for each pending component
+    if (pendingComponents.length > 0) {
+        const requiredMarksHeader = document.createElement('div');
+        requiredMarksHeader.className = 'result-header';
+        requiredMarksHeader.textContent = 'Required Marks for Pending Components:';
+        calculationResult.appendChild(requiredMarksHeader);
+        
+        Object.entries(requiredMarks).forEach(([name, mark]) => {
+            const markDiv = document.createElement('div');
+            markDiv.className = 'result-item';
+            markDiv.innerHTML = `
+                <span class="result-label">${name}:</span>
+                <span class="result-value required-mark">${mark.toFixed(2)}%</span>
+            `;
+            calculationResult.appendChild(markDiv);
+        });
+    }
+    
+    // Update the exam display with current grade and required mark for final
+    const requiredFinalMark = pendingComponents.length > 0 ? 
+        Object.values(requiredMarks)[pendingComponents.length - 1].toFixed(2) : 'N/A';
+    
+    updateExamWithGradeInfo(courseId, currentGrade.toFixed(2), requiredFinalMark);
+    
+    // Save the calculation results
+    courseData.currentGrade = currentGrade;
+    courseData.requiredMarks = requiredMarks;
+    localStorage.setItem('grade-calculators', JSON.stringify(gradeCalculators));
+}
+
+// Update exam countdown display with grade information
+function updateExamWithGradeInfo(examId, currentGrade, requiredFinalMark) {
+    const examElement = document.getElementById(`exam-${examId}`);
+    if (!examElement) return;
+    
+    // Check if grade info section already exists
+    let gradeInfoSection = examElement.querySelector('.exam-grade-info');
+    
+    if (!gradeInfoSection) {
+        // Create grade info section
+        gradeInfoSection = document.createElement('div');
+        gradeInfoSection.className = 'exam-grade-info';
+        
+        // Add after countdown timer
+        const countdownTimer = examElement.querySelector('.countdown-timer');
+        if (countdownTimer) {
+            countdownTimer.after(gradeInfoSection);
+        } else {
+            examElement.appendChild(gradeInfoSection);
+        }
+    }
+    
+    // Update content
+    gradeInfoSection.innerHTML = `
+        <p>
+            <span class="label">Current Grade:</span>
+            <span class="value current-grade">${currentGrade}%</span>
+        </p>
+        <p>
+            <span class="label">Required Final Mark:</span>
+            <span class="value required-mark">${requiredFinalMark}%</span>
+        </p>
+    `;
 }
 
 // Adjust countdown display based on screen size
