@@ -424,3 +424,88 @@ function addTask() {
         renderTasks();
     }
 }
+
+// Adjust countdown display based on screen size
+function adjustForScreenSize() {
+    const isMobile = window.innerWidth < 640;
+    const examCountdowns = document.querySelectorAll('.exam-countdown');
+    
+    examCountdowns.forEach(countdown => {
+        if (isMobile) {
+            // Handle any specific mobile adjustments if needed
+            // For example, abbreviating labels or adjusting content
+        } else {
+            // Handle desktop specific adjustments
+        }
+    });
+    
+    // Adjust calendar day sizes on small screens
+    const calendarDays = document.querySelectorAll('.calendar-day:not(.empty)');
+    calendarDays.forEach(day => {
+        if (window.innerWidth < 420) {
+            // Small screen adjustments
+            day.style.fontSize = '0.875rem';
+        } else {
+            // Reset to default
+            day.style.fontSize = '';
+        }
+    });
+}
+
+// Call initially and add resize listener
+adjustForScreenSize();
+window.addEventListener('resize', adjustForScreenSize);
+
+// Handle touch interactions for tasks on mobile
+const taskItems = document.querySelectorAll('.task-list li');
+taskItems.forEach(item => {
+    let touchStartTime;
+    let touchTimer;
+    
+    item.addEventListener('touchstart', () => {
+        touchStartTime = new Date().getTime();
+        touchTimer = setTimeout(() => {
+            // Long press handler if needed
+            const actions = item.querySelector('.task-actions');
+            if (actions) {
+                actions.style.opacity = '1';
+            }
+        }, 500);
+    });
+    
+    item.addEventListener('touchend', () => {
+        const touchEndTime = new Date().getTime();
+        clearTimeout(touchTimer);
+        
+        // Reset any touch-specific UI states if needed
+        setTimeout(() => {
+            const actions = item.querySelector('.task-actions');
+            if (actions && window.innerWidth >= 768) {
+                actions.style.opacity = '';
+            }
+        }, 1500);
+    });
+});
+
+// Improve mobile form behavior
+const examForm = document.getElementById('exam-form');
+if (examForm) {
+    examForm.addEventListener('submit', (e) => {
+        // Blur active input to hide keyboard on mobile
+        document.activeElement.blur();
+    });
+}
+
+// Handle touch events for calendar days
+const calendarDayElements = document.querySelectorAll('.calendar-day');
+calendarDayElements.forEach(day => {
+    day.addEventListener('touchstart', () => {
+        day.classList.add('calendar-day-touch');
+    });
+    
+    day.addEventListener('touchend', () => {
+        setTimeout(() => {
+            day.classList.remove('calendar-day-touch');
+        }, 150);
+    });
+});

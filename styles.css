@@ -3,6 +3,48 @@
     padding: 0;
     box-sizing: border-box;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+/* Additional mobile-specific styles */
+.calendar-day-touch {
+    transform: scale(1.15);
+    background-color: #4b5563 !important;
+}
+
+/* Ensure inputs are large enough for touch targets */
+input, button, select, textarea {
+    font-size: 16px !important; /* Prevents iOS zoom on focus */
+}
+
+/* Fix for iOS scrolling issues */
+.exams-list, .task-list {
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Improve tap targets everywhere */
+a, button, .task-btn, .delete-exam-btn, .calendar-day:not(.empty) {
+    min-height: 36px;
+    min-width: 36px;
+}
+
+/* Better spacing for form elements on small screens */
+.form-group + .form-group {
+    margin-top: 1rem;
+}
+
+/* Fix any potential overflow issues */
+* {
+    max-width: 100%;
+}
+}
+
+html {
+    font-size: 16px;
+}
+
+/* Base font size adjustment for smaller screens */
+@media (max-width: 480px) {
+    html {
+        font-size: 14px;
+    }
 }
 
 body {
@@ -11,25 +53,33 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 1.5rem;
+    padding: 0.75rem;
     color: #f8fafc;
+    overflow-x: hidden;
 }
 
 .container {
     background-color: rgba(17, 24, 39, 0.9);
     border: 1px solid #374151;
     border-radius: 0.75rem;
-    padding: 2rem;
+    padding: 1.25rem;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     backdrop-filter: blur(12px);
     width: 100%;
     max-width: 1024px;
     text-align: center;
+    overflow: hidden;
+}
+
+@media (min-width: 640px) {
+    .container {
+        padding: 2rem;
+    }
 }
 
 h1 {
     margin-bottom: 1.5rem;
-    font-size: 2.25rem;
+    font-size: 1.75rem;
     font-weight: bold;
     background: linear-gradient(to right, #60a5fa, #a78bfa);
     -webkit-background-clip: text;
@@ -37,6 +87,12 @@ h1 {
     color: transparent;
     position: relative;
     display: inline-block;
+}
+
+@media (min-width: 640px) {
+    h1 {
+        font-size: 2.25rem;
+    }
 }
 
 h1:after {
@@ -51,12 +107,18 @@ h1:after {
 }
 
 h2 {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     margin-bottom: 1rem;
     background: linear-gradient(to right, #fbbf24, #f97316);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+}
+
+@media (min-width: 640px) {
+    h2 {
+        font-size: 1.5rem;
+    }
 }
 
 /* Date and Time */
@@ -117,15 +179,22 @@ h2 {
 
 .time-display time {
     position: relative;
-    font-size: 1.875rem;
+    font-size: 1.5rem;
     font-family: "SF Mono", SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
     font-weight: bold;
-    letter-spacing: 0.2em;
+    letter-spacing: 0.1em;
     background: linear-gradient(to right, #22d3ee, #3b82f6);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+@media (min-width: 640px) {
+    .time-display time {
+        font-size: 1.875rem;
+        letter-spacing: 0.2em;
+    }
 }
 
 .time-display::after {
@@ -167,6 +236,7 @@ h2 {
     flex-direction: column;
     margin-bottom: 1rem;
     text-align: left;
+    width: 100%;
 }
 
 .form-group label {
@@ -287,6 +357,12 @@ h2 {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.exam-header h3 {
+    margin-right: 0.5rem;
+    margin-bottom: 0.25rem;
 }
 
 .delete-exam-btn {
@@ -294,14 +370,23 @@ h2 {
     color: #f87171;
     border: 1px solid #ef4444;
     border-radius: 50%;
-    width: 24px;
-    height: 24px;
+    width: 36px;
+    height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     font-weight: bold;
     transition: all 0.3s;
+    font-size: 1.25rem;
+}
+
+@media (min-width: 640px) {
+    .delete-exam-btn {
+        width: 24px;
+        height: 24px;
+        font-size: 1rem;
+    }
 }
 
 .delete-exam-btn:hover {
@@ -330,6 +415,7 @@ h2 {
     justify-content: space-between;
     padding-top: 0.75rem;
     border-top: 1px solid rgba(75, 85, 99, 0.4);
+    flex-wrap: wrap;
 }
 
 .countdown-unit {
@@ -337,10 +423,12 @@ h2 {
     flex-direction: column;
     align-items: center;
     flex: 1;
+    min-width: 60px;
+    margin: 0.25rem 0;
 }
 
 .countdown-unit .count {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     font-weight: bold;
     font-family: "SF Mono", SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
     position: relative;
@@ -355,6 +443,12 @@ h2 {
     font-size: 0.75rem;
     color: #9ca3af;
     margin-top: 0.25rem;
+}
+
+@media (min-width: 640px) {
+    .countdown-unit .count {
+        font-size: 1.5rem;
+    }
 }
 
 .exam-passed-message {
@@ -458,9 +552,16 @@ h2 {
 }
 
 .weekdays div {
-    font-size: 0.875rem;
+    font-size: 0.75rem;
     color: #9ca3af;
     font-weight: 500;
+    padding: 0.25rem 0;
+}
+
+@media (min-width: 420px) {
+    .weekdays div {
+        font-size: 0.875rem;
+    }
 }
 
 .calendar-days {
@@ -470,7 +571,7 @@ h2 {
 }
 
 .calendar-day {
-    width: 2rem;
+    width: calc(100% - 0.5rem);
     height: 2rem;
     display: flex;
     align-items: center;
@@ -478,6 +579,12 @@ h2 {
     margin: 0.25rem;
     border-radius: 9999px;
     position: relative;
+}
+
+@media (min-width: 420px) {
+    .calendar-day {
+        width: 2rem;
+    }
 }
 
 .calendar-day.empty {
@@ -678,21 +785,48 @@ h2 {
 .task-actions {
     display: flex;
     gap: 0.5rem;
-    opacity: 0;
-    transition: opacity 0.3s;
 }
 
-.task-list li:hover .task-actions {
-    opacity: 1;
+/* Hide buttons on desktop until hover */
+@media (min-width: 768px) {
+    .task-actions {
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    
+    .task-list li:hover .task-actions {
+        opacity: 1;
+    }
+}
+
+/* Always show on mobile since there's no hover */
+@media (max-width: 767px) {
+    .task-actions {
+        opacity: 1;
+    }
 }
 
 .task-btn {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.75rem;
+    padding: 0.375rem 0.625rem;
+    font-size: 0.875rem;
     border: none;
     border-radius: 0.25rem;
     color: white;
     cursor: pointer;
+    min-width: 36px;
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@media (min-width: 640px) {
+    .task-btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+        min-width: auto;
+        min-height: auto;
+    }
 }
 
 .complete-btn {
@@ -747,18 +881,27 @@ h2 {
     100% { opacity: 1; }
 }
 
-/* Widescreen Layout */
-@media (min-width: 1024px) {
+/* Responsive Layouts */
+/* Mobile layout - Everything stacked */
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+/* Tablet layout */
+@media (min-width: 768px) {
     .container {
         display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-columns: 1fr 1fr;
         grid-template-areas:
-            "title title title"
-            "datetime exams exams"
-            "calendar exams exams"
-            "tasks tasks tasks"
-            "footer footer footer";
-        gap: 1.5rem;
+            "title title"
+            "datetime datetime"
+            "exams exams"
+            "calendar calendar"
+            "tasks tasks"
+            "footer footer";
+        gap: 1.25rem;
         text-align: left;
     }
     
@@ -769,26 +912,36 @@ h2 {
     
     .datetime-container {
         grid-area: datetime;
-        margin-bottom: 0;
     }
     
     .exams-container {
         grid-area: exams;
-        margin-bottom: 0;
     }
     
     .calendar-container {
         grid-area: calendar;
-        margin-bottom: 0;
     }
     
     .tasks-container {
         grid-area: tasks;
-        margin-top: 0;
     }
     
     .footer {
         grid-area: footer;
         text-align: center;
+    }
+}
+
+/* Widescreen Layout */
+@media (min-width: 1024px) {
+    .container {
+        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-areas:
+            "title title title"
+            "datetime exams exams"
+            "calendar exams exams"
+            "tasks tasks tasks"
+            "footer footer footer";
+        gap: 1.5rem;
     }
 }
