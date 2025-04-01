@@ -721,7 +721,7 @@ function calculateRequiredMarks() {
         const desiredGrade = courseData.desiredGrade || 80;
         
         // Add 2% buffer to desired grade
-        const targetGrade = desiredGrade + 2;
+        const targetGrade = desiredGrade;
         
         // Calculate what's needed for remaining components
         const remainingWeight = 100 - completedWeight;
